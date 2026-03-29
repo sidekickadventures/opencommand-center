@@ -33,7 +33,20 @@ function renderAgents() {
       <h3>${agent.name}</h3>
       <div class="role">${agent.role}</div>
     `;
-    card.addEventListener('click', () => activateAgent(agent));
+    card.addEventListener('click', (e) => {
+      // Prevent double-tap zoom on mobile
+      e.preventDefault();
+      activateAgent(agent);
+    });
+    // Also support button-like activation via keyboard
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('role', 'button');
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        activateAgent(agent);
+      }
+    });
     container.appendChild(card);
   });
   log(`Loaded ${agents.length} agents from registry.`, 'info');
