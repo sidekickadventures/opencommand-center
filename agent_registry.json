@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OpenCommand Center Agent Registry",
+  "description": "Defines all agents, their roles, positions, and configuration for the OpenCommand Center dashboard.",
+  "version": "1.0.0",
+  "agents": [
+    {
+      "id": "executive",
+      "name": "Executive",
+      "role": "CEO",
+      "description": "Top-level command and oversight; RTBNXH persona integration.",
+      "class": "ExecutiveAgent",
+      "enabled": true,
+      "position": { "panel": "left", "x": 20, "y": 50 },
+      "icon": "👔",
+      "permissions": ["admin", "override", "broadcast"],
+      "capabilities": ["strategy", "approvals", "escalations"]
+    },
+    {
+      "id": "operations",
+      "name": "Ops Commander",
+      "role": "Operations",
+      "description": "Manages workflows, scheduling, and agent coordination.",
+      "class": "OperationsAgent",
+      "enabled": true,
+      "position": { "panel": "left", "x": 20, "y": 200 },
+      "icon": "⚙️",
+      "permissions": ["manage_agents", "schedule"],
+      "capabilities": ["orchestration", "monitoring"]
+    },
+    {
+      "id": "finance",
+      "name": "Finance Agent",
+      "role": "Treasury",
+      "description": "Handles payments, NFT minting, and blockchain transactions.",
+      "class": "FinanceAgent",
+      "enabled": true,
+      "position": { "panel": "left", "x": 20, "y": 350 },
+      "icon": "💰",
+      "permissions": ["payments", "nft_mint", "blockchain"],
+      "capabilities": ["process_payment", "mint_nft", "balance_check"]
+    },
+    {
+      "id": "bitcoin",
+      "name": "Bitcoin Agent",
+      "role": "Bitcoin",
+      "description": "Bitcoin Ordinals and Runes via Unisat.",
+      "class": "BitcoinOrdinalAgent",
+      "enabled": true,
+      "position": { "panel": "center", "x": 300, "y": 80 },
+      "icon": "₿",
+      "permissions": ["blockchain_write"],
+      "capabilities": ["inscribe_ordinal", "mint_rune", "get_balance"]
+    },
+    {
+      "id": "fractal",
+      "name": "Fractal Agent",
+      "role": "FractalBitcoin",
+      "description": "Fractal Bitcoin Ordinals via Unisat.",
+      "class": "FractalBitcoinAgent",
+      "enabled": true,
+      "position": { "panel": "center", "x": 300, "y": 200 },
+      "icon": "🔶",
+      "permissions": ["blockchain_write"],
+      "capabilities": ["inscribe_ordinal", "get_balance"]
+    },
+    {
+      "id": "litecoin",
+      "name": "Litecoin Agent",
+      "role": "Litecoin",
+      "description": "Litecoin Litescribe and Runes via NodesNow.",
+      "class": "LitecoinAgent",
+      "enabled": true,
+      "position": { "panel": "center", "x": 300, "y": 320 },
+      "icon": "Ł",
+      "permissions": ["blockchain_write"],
+      "capabilities": ["inscribe_litescribe", "get_balance"]
+    },
+    {
+      "id": "dogecoin",
+      "name": "Dogecoin Agent",
+      "role": "Dogecoin",
+      "description": "Dogecoin Doginals via NodesNow.",
+      "class": "DogecoinAgent",
+      "enabled": true,
+      "position": { "panel": "center", "x": 300, "y": 440 },
+      "icon": "🐕",
+      "permissions": ["blockchain_write"],
+      "capabilities": ["inscribe_doginal", "get_balance"]
+    },
+    {
+      "id": "tezos",
+      "name": "Tezos Agent",
+      "role": "Tezos",
+      "description": "XTZ payments and NFT minting on Tezos via NodesNow/objkt.com.",
+      "class": "TezosAgent",
+      "enabled": true,
+      "position": { "panel": "right", "x": 580, "y": 80 },
+      "icon": "✳️",
+      "permissions": ["blockchain_write"],
+      "capabilities": ["send_payment", "mint_objkt_nft", "get_balance"]
+    },
+    {
+      "id": "music",
+      "name": "Music Producer",
+      "role": "MusicAgent",
+      "description": "Records tracks, manages free tier, and triggers NFT minting.",
+      "class": "MusicAgent",
+      "enabled": true,
+      "position": { "panel": "right", "x": 580, "y": 250 },
+      "icon": "🎵",
+      "permissions": ["create_media", "nft_mint"],
+      "capabilities": ["record_track", "process_payment", "mint_nft"]
+    },
+    {
+      "id": "security",
+      "name": "Security Officer",
+      "role": "Security",
+      "description": "Monitors for threats, validates transactions, and enforces compliance.",
+      "class": "SecurityAgent",
+      "enabled": true,
+      "position": { "panel": "right", "x": 580, "y": 400 },
+      "icon": "🛡️",
+      "permissions": ["security", "audit"],
+      "capabilities": ["scan_transactions", "risk_assessment", "alert"]
+    }
+  ]
+}
