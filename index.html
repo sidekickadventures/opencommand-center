@@ -7,36 +7,21 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <h1>OpenCommand Center</h1>
-    <div id="status-bar">Connecting...</div>
-  </header>
+  <div class="container">
+    <header>
+      <h1>OpenCommand Center</h1>
+      <div class="controls">
+        <select id="agent-select"><option value="">Select agent...</option></select>
+        <input type="text" id="skill-input" placeholder="Skill (e.g., openclaw)" value="openclaw">
+        <button id="send-btn">Send</button>
+      </div>
+    </header>
 
-  <main id="grid">
-    <!-- Left Panel -->
-    <section id="left-panel" class="panel"></section>
+    <main id="log"></main>
 
-    <!-- Center Panel -->
-    <section id="center-panel" class="panel"></section>
-
-    <!-- Right Panel -->
-    <section id="right-panel" class="panel"></section>
-  </main>
-
-  <!-- Task Modal -->
-  <div id="modal" class="modal hidden">
-    <div class="modal-content">
-      <h2 id="modal-title">Send Task</h2>
-      <form id="task-form">
-        <input type="hidden" id="agent-id">
-        <textarea id="task-payload" placeholder='Enter JSON payload, e.g. {"action":"...","params":{...}}' rows="6"></textarea>
-        <div class="modal-actions">
-          <button type="button" id="cancel-btn">Cancel</button>
-          <button type="submit">Send</button>
-        </div>
-      </form>
-      <pre id="result-output" class="hidden"></pre>
-    </div>
+    <footer>
+      <textarea id="prompt-input" placeholder="Enter task payload as JSON..."></textarea>
+    </footer>
   </div>
 
   <script src="frontend.js"></script>

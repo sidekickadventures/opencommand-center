@@ -1,134 +1,95 @@
-// OpenCommand Center Frontend
-// Loads agent registry, renders cards, and dispatches tasks via fetch or WebSocket
+// OpenCommand Center Frontend — Command/Log style
+// Loads agent registry, populates dropdown, sends tasks to /agent/run
 
 const AGENT_REGISTRY_URL = 'agent_registry.json';
-const API_BASE = ''; // same origin; adjust if backend is separate
+const AGENT_RUN_ENDPOINT = '/agent/run';
 
 let agents = [];
-let ws = null;
 
-// Utility
 function el(selector) { return document.querySelector(selector); }
-function showModal(agent) {
-  el('#modal').classList.remove('hidden');
-  el('#agent-id').value = agent.id;
-  el('#modal-title').textContent = `Send task to ${agent.name}`;
-  el('#task-payload').value = JSON.stringify({ action: 'ping' }, null, 2);
-  el('#result-output').classList.add('hidden');
-  el('#task-payload').focus();
+
+function now() {
+  const d = new Date();
+  return d.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
-function hideModal() { el('#modal').classList.add('hidden'); }
 
-// Render agents into panels (3 columns)
-function renderAgents() {
-  const panels = {
-    left: el('#left-panel'),
-    center: el('#center-panel'),
-    right: el('#right-panel')
-  };
-  // Clear panels
-  Object.values(panels).forEach(p => p.innerHTML = '');
+function log(message, type = 'info') {
+  const container = el('#log');
+  const entry = document.createElement('div');
+  entry.className = `log-entry ${type}`;
+  entry.innerHTML = `<span class="timestamp">[${now()}]</span> ${message}`;
+  container.appendChild(entry);
+  container.scrollTop = container.scrollHeight;
+}
 
-  // Sort by panel + x,y to keep visual order
-  agents.sort((a, b) => {
-    const panelOrder = { left: 0, center: 1, right: 2 };
-    const pa = panelOrder[a.panel], pb = panelOrder[b.panel];
-    if (pa !== pb) return pa - pb;
-    return a.y - b.y || a.x - b.x;
-  });
-
-  // Create cards
-  agents.forEach(agent => {
-    const card = document.createElement('div');
-    card.className = 'agent-card';
-    card.innerHTML = `
-      <div class="agent-icon">${agent.icon || '🤖'}</div>
-      <div class="agent-info">
-        <h3>${agent.name}</h3>
-        <div class="role">${agent.role}</div>
-      </div>
-      <div class="agent-status idle" id="status-${agent.id}">idle</div>
-      <div class="agent-actions">
-        <button data-id="${agent.id}">Send Task</button>
-      </div>
-    `;
-    panels[agent.panel].appendChild(card);
-  });
-
-  // Bind click handlers
-  document.querySelectorAll('.agent-actions button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const agent = agents.find(a => a.id === btn.dataset.id);
-      if (agent) showModal(agent);
-    });
+function populateAgents() {
+  const select = el('#agent-select');
+  select.innerHTML = '<option value="">Select agent...</option>';
+  agents.forEach(a => {
+    const opt = document.createElement('option');
+    opt.value = a.id;
+    opt.textContent = `${a.name} (${a.role})`;
+    select.appendChild(opt);
   });
 }
 
-// Dispatch task to agent (REST or WebSocket)
-async function dispatchTask(agentId, payload) {
-  setStatus(agentId, 'active');
-  const endpoint = `${API_BASE}/agents/${agentId}/task`;
-  try {
-    const resp = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const result = await resp.json();
-    setStatus(agentId, 'idle');
-    return result;
-  } catch (err) {
-    setStatus(agentId, 'error');
-    throw err;
-  }
-}
-
-function setStatus(agentId, status) {
-  const el = document.getElementById(`status-${agentId}`);
-  if (el) {
-    el.className = `agent-status ${status}`;
-    el.textContent = status;
-  }
-}
-
-// Load agent registry
 async function loadRegistry() {
   try {
     const r = await fetch(AGENT_REGISTRY_URL);
     if (!r.ok) throw new Error('Failed to load agent_registry.json');
     agents = await r.json();
-    renderAgents();
-    el('#status-bar').textContent = `Loaded ${agents.length} agents`;
+    populateAgents();
+    log('System ready. ' + agents.length + ' agents loaded.', 'info');
   } catch (e) {
-    console.error(e);
-    el('#status-bar').textContent = 'Error loading agents';
+    log('Error loading agents: ' + e.message, 'error');
   }
 }
 
-// Modal form submit
-el('#task-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const agentId = el('#agent-id').value;
-  const raw = el('#task-payload').value;
-  let payload;
-  try { payload = JSON.parse(raw); } catch (err) {
-    alert('Invalid JSON payload');
+async function sendTask() {
+  const agent = el('#agent-select').value;
+  const skill = el('#skill-input').value.trim();
+  const prompt = el('#prompt-input').value.trim();
+
+  if (!agent) {
+    log('Select an agent first.', 'error');
     return;
   }
-  const out = el('#result-output');
-  out.classList.remove('hidden');
-  out.textContent = 'Sending...';
+  if (!prompt) {
+    log('Enter a task payload.', 'error');
+    return;
+  }
+
+  let payload;
+  try { payload = JSON.parse(prompt); } catch (e) {
+    log('Invalid JSON in payload.', 'error');
+    return;
+  }
+
+  log(`Sending to ${agent} (skill: ${skill || 'openclaw'})...`, 'info');
+
   try {
-    const result = await dispatchTask(agentId, payload);
-    out.textContent = JSON.stringify(result, null, 2);
+    const resp = await fetch(AGENT_RUN_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agent, skill, ...payload })
+    });
+    const result = await resp.json();
+    if (result.success) {
+      log(`Success: ${JSON.stringify(result.result)}`, 'success');
+    } else {
+      log(`Error: ${result.error}`, 'error');
+    }
   } catch (err) {
-    out.textContent = `Error: ${err.message}`;
-    setStatus(agentId, 'error');
+    log('Connection timeout or network error.', 'error');
+  }
+}
+
+el('#send-btn').addEventListener('click', sendTask);
+el('#prompt-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendTask();
   }
 });
 
-// Cancel
-el('#cancel-btn').addEventListener('click', hideModal);
-
-// Initialize
 loadRegistry();
