@@ -1,29 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OpenCommand Center</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Xaeon Cloud • OpenClaw</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>OpenCommand Center</h1>
-      <div class="controls">
-        <select id="agent-select"><option value="">Select agent...</option></select>
-        <input type="text" id="skill-input" placeholder="Skill (e.g., openclaw)" value="openclaw">
-        <button id="send-btn">Send</button>
-      </div>
-    </header>
+<div class="monitor-frame">
+ <div class="screen">
+ <div class="header">OPENCLAW • AGENT COMMAND CENTER</div>
+ 
+ <div class="container" id="agents"></div>
+ 
+ <div class="log" id="log">
+ <strong>● System Online</strong> — Connected to Xaeon Cloud.<br>
+ Loading agent registry...
+ </div>
 
-    <main id="log"></main>
+ <div class="input-area">
+   <textarea id="payload-input" placeholder='Enter JSON payload for the selected agent, e.g. {"action":"ping"}&#10;If empty, a default {"action":"ping"} will be sent.'></textarea>
+ </div>
+ </div>
+</div>
 
-    <footer>
-      <textarea id="prompt-input" placeholder="Enter task payload as JSON..."></textarea>
-    </footer>
-  </div>
-
-  <script src="frontend.js"></script>
+<script src="frontend.js"></script>
 </body>
 </html>
