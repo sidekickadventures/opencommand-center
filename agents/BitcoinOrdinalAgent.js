@@ -1,45 +1,34 @@
 // BitcoinOrdinalAgent - Bitcoin ordinals & Fractal Bitcoin ordinals via Unisat
-const { BitcoinService, FractalBitcoinService } = require('./BlockchainService');
+const AgentBase = require('../AgentBase');
+const { BitcoinService, FractalBitcoinService } = require('../BlockchainService');
 
-class BitcoinOrdinalAgent {
-    constructor() {
-        this.name = 'BitcoinOrdinalAgent';
+class BitcoinOrdinalAgent extends AgentBase {
+  async process(payload) {
+    const { action, params } = payload;
+    const supported = ['inscribe_ordinal', 'get_balance'];
+    if (!supported.includes(action)) {
+      throw new Error(`Unsupported action: ${action}`);
     }
 
-    // Real methods
-    async inscribeOrdinal(data, recipientAddress, network = 'testnet') {
-        return await BitcoinService.inscribeOrdinal(data, recipientAddress);
-    }
-
-    async inscribeFractalOrdinal(data, recipientAddress, network = 'fractal_testnet') {
-        return await FractalBitcoinService.inscribeOrdinal(data, recipientAddress);
-    }
-
-    async getBalance(address, network = 'testnet') {
-        if (network.startsWith('fractal')) {
-            return await FractalBitcoinService.getBalance(address);
+    switch (action) {
+      case 'inscribe_ordinal': {
+        const { data, recipientAddress, network } = params || {};
+        if (!data || !recipientAddress) {
+          throw new Error('inscribe_ordinal requires params.data and params.recipientAddress');
         }
-        return await BitcoinService.getBalance(address);
+        const result = await BitcoinService.inscribeOrdinal(data, recipientAddress, network);
+        return { success: true, txid: result.txid, network };
+      }
+      case 'get_balance': {
+        const { address, network } = params || {};
+        if (!address) throw new Error('get_balance requires params.address');
+        const balance = await BitcoinService.getBalance(address, network);
+        return { success: true, address, balance };
+      }
+      default:
+        return { success: false, error: 'unknown' };
     }
-
-    // Simulated methods (for backward compatibility with test coordinator)
-    async simulateOrdinalMint(data) {
-        // Use a hardcoded test address or from env
-        const testAddress = process.env.BITCOIN_TEST_ADDRESS || 'tb1qtestaddress00000000000';
-        console.log(`[BitcoinOrdinalAgent] simulateOrdinalMint -> inscribeOrdinal to ${testAddress}`);
-        return await this.inscribeOrdinal(Buffer.from(data), testAddress);
-    }
-
-    async simulateRuneMint(data) {
-        // If we had a rune endpoint, would call it
-        throw new Error('Bitcoin Rune minting not implemented in Unisat yet; use simulateOrdinalMint or call mintRune directly when endpoint is available');
-    }
-
-    async simulateFractalOrdinal(data) {
-        const testAddress = process.env.FRACTAL_TEST_ADDRESS || 'fb1qtestaddress00000000000';
-        console.log(`[BitcoinOrdinalAgent] simulateFractalOrdinal -> inscribeFractalOrdinal to ${testAddress}`);
-        return await this.inscribeFractalOrdinal(Buffer.from(data), testAddress);
-    }
+  }
 }
 
 module.exports = BitcoinOrdinalAgent;

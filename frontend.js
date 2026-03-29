@@ -1,10 +1,12 @@
 // OpenCommand Center — Monitor Frame UI
 // Loads agents from agent_registry.json and dispatches tasks to /agent/run
+// Supports iframe embedding via postMessage API
 
 const AGENT_REGISTRY_URL = 'agent_registry.json';
 const AGENT_RUN_ENDPOINT = '/agent/run';
 
 let agents = [];
+let isIframe = false;
 
 function el(selector) { return document.querySelector(selector); }
 
@@ -15,6 +17,7 @@ function now() {
 
 function log(message, type = 'info') {
   const container = el('#log');
+  if (!container) return;
   const entry = document.createElement('div');
   entry.className = `log-entry ${type}`;
   entry.innerHTML = `<span class="timestamp">[${now()}]</span> ${message}`;
@@ -22,8 +25,15 @@ function log(message, type = 'info') {
   container.scrollTop = container.scrollHeight;
 }
 
+function sendToParent(message) {
+  if (isIframe && window.parent !== window) {
+    window.parent.postMessage(message, '*');
+  }
+}
+
 function renderAgents() {
   const container = el('#agents');
+  if (!container) return;
   container.innerHTML = '';
   agents.forEach(agent => {
     const card = document.createElement('div');
@@ -34,11 +44,9 @@ function renderAgents() {
       <div class="role">${agent.role}</div>
     `;
     card.addEventListener('click', (e) => {
-      // Prevent double-tap zoom on mobile
       e.preventDefault();
       activateAgent(agent);
     });
-    // Also support button-like activation via keyboard
     card.setAttribute('tabindex', '0');
     card.setAttribute('role', 'button');
     card.addEventListener('keydown', (e) => {
@@ -49,7 +57,7 @@ function renderAgents() {
     });
     container.appendChild(card);
   });
-  log(`Loaded ${agents.length} agents from registry.`, 'info');
+  log(`Loaded ${agents.length} agents.`, 'info');
 }
 
 async function loadRegistry() {
@@ -63,11 +71,13 @@ async function loadRegistry() {
   }
 }
 
-async function activateAgent(agent) {
+async function activateAgent(agent, overridePayload) {
   const skill = 'openclaw';
-  const payloadText = el('#payload-input').value.trim();
+  const payloadText = overridePayload ? null : el('#payload-input')?.value.trim();
   let payload;
-  if (payloadText) {
+  if (overridePayload) {
+    payload = overridePayload;
+  } else if (payloadText) {
     try { payload = JSON.parse(payloadText); } catch (e) {
       log('Invalid JSON payload.', 'error');
       return;
@@ -75,8 +85,9 @@ async function activateAgent(agent) {
   } else {
     payload = { action: 'ping' };
   }
-  
-  log(`Activating <span style="color:#00ffcc">${agent.name}</span> (skill: ${skill})...`, 'info');
+
+  log(`Activating <span style="color:#00ffcc">${agent.name}</span>...`, 'info');
+  sendToParent({ type: 'agent_activating', agent: agent.id, name: agent.name });
 
   try {
     const resp = await fetch(AGENT_RUN_ENDPOINT, {
@@ -87,12 +98,61 @@ async function activateAgent(agent) {
     const result = await resp.json();
     if (result.success) {
       log(`Success: <span style="color:#4caf50">${JSON.stringify(result.result)}</span>`, 'success');
+      sendToParent({ type: 'agent_result', agent: agent.id, result: result.result, thumbsUp: result.result?.thumbsUp });
     } else {
       log(`Error: <span style="color:#ff6666">${result.error}</span>`, 'error');
+      sendToParent({ type: 'agent_error', agent: agent.id, error: result.error });
     }
   } catch (err) {
     log('Connection timeout or network error.', 'error');
+    sendToParent({ type: 'agent_error', agent: agent.id, error: 'Network error' });
   }
+}
+
+// ── postMessage API (iframe control) ────────────────────────────────────────
+window.addEventListener('message', async (event) => {
+  const { type, agent, payload } = event.data || {};
+  if (!type) return;
+
+  switch (type) {
+    case 'activate':
+      // External host can trigger an agent by name or id
+      const target = agents.find(a => a.id === agent || a.role === agent);
+      if (target) {
+        await activateAgent(target, payload);
+      } else {
+        log(`Agent not found: ${agent}`, 'error');
+        sendToParent({ type: 'agent_error', agent, error: 'Agent not found' });
+      }
+      break;
+
+    case 'ping':
+      sendToParent({ type: 'pong', timestamp: Date.now() });
+      break;
+
+    case 'get_agents':
+      sendToParent({ type: 'agents_list', agents });
+      break;
+
+    case 'set_payload':
+      if (el('#payload-input')) {
+        el('#payload-input').value = typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2);
+      }
+      break;
+
+    default:
+      log(`Unknown postMessage type: ${type}`, 'error');
+  }
+});
+
+// Detect iframe
+try { isIframe = window.self !== window.top; } catch (e) { isIframe = true; }
+
+// Signal ready to parent
+if (isIframe) {
+  window.addEventListener('load', () => {
+    sendToParent({ type: 'iframe_ready', pathname: window.location.pathname });
+  });
 }
 
 // Initialize

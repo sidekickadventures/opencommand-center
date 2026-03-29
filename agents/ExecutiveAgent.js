@@ -1,13 +1,6 @@
-// ExecutiveAgent - Top-level command, oversight, and escalation
-// Represents the CEO/RTBNXH persona
-const AgentBase = require('./AgentBase');
+const AgentBase = require('../AgentBase');
 
 class ExecutiveAgent extends AgentBase {
-  constructor(config) {
-    super(config);
-    this.priority = 'critical';
-  }
-
   async process(payload) {
     const { action, data } = payload;
     this.log(`Executive received action: ${action}`);
@@ -25,22 +18,17 @@ class ExecutiveAgent extends AgentBase {
   }
 
   async approve(data) {
-    // Approvals for major transactions, agent actions, etc.
-    this.log(`Approving: ${data.item}`);
+    this.log(`Approving: ${data?.item}`);
     return { approved: true, timestamp: new Date().toISOString() };
   }
 
   async escalate(data) {
-    // Escalate to higher authority (in this case, self)
-    this.log(`Escalation received: ${data.reason}`, 'warn');
-    // Could notify via external channel
+    this.log(`Escalation received: ${data?.reason}`, 'warn');
     return { escalated: true, handledBy: this.agentName };
   }
 
   async setStrategy(data) {
-    // Set overall strategy; would affect other agents
-    this.log(`Strategy update: ${data.strategy}`);
-    // Broadcast to all agents
+    this.log(`Strategy update: ${data?.strategy}`);
     this.emit('strategy_changed', data);
     return { strategySet: true };
   }

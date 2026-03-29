@@ -1,26 +1,30 @@
-const { AgentBase } = require('../AgentBase');
-const UnisatService = require('../UnisatService');
+// FractalBitcoinAgent - Fractal Bitcoin ordinals via Unisat
+const AgentBase = require('../AgentBase');
+const { FractalBitcoinService } = require('../BlockchainService');
 
 class FractalBitcoinAgent extends AgentBase {
-  constructor(manager) {
-    super(manager, 'fractal');
-    this.supportedActions = ['inscribe_ordinal', 'get_balance'];
-    this.unisat = new UnisatService({ network: 'fractal' }); // use fractal network config
-  }
-
-  async handle(payload) {
+  async process(payload) {
     const { action, params } = payload;
-    if (!this.supportedActions.includes(action)) {
+    const supported = ['inscribe_ordinal', 'get_balance'];
+    if (!supported.includes(action)) {
       throw new Error(`Unsupported action: ${action}`);
     }
 
     switch (action) {
-      case 'inscribe_ordinal':
-        // stub — actual call: this.unisat.inscribe({ ordinal: params.ordinal })
-        return { success: true, txid: 'fractal-inscribe-' + Date.now(), content: params.content };
-      case 'get_balance':
-        // stub — actual call: this.unisat.getBalance(params.address)
-        return { success: true, confirmed: '0.5', unconfirmed: '0.0' };
+      case 'inscribe_ordinal': {
+        const { data, recipientAddress, network } = params || {};
+        if (!data || !recipientAddress) {
+          throw new Error('inscribe_ordinal requires params.data and params.recipientAddress');
+        }
+        const result = await FractalBitcoinService.inscribeOrdinal(data, recipientAddress, network);
+        return { success: true, txid: result.txid, network: network || 'fractal_testnet' };
+      }
+      case 'get_balance': {
+        const { address, network } = params || {};
+        if (!address) throw new Error('get_balance requires params.address');
+        const balance = await FractalBitcoinService.getBalance(address, network);
+        return { success: true, address, balance };
+      }
       default:
         return { success: false, error: 'unknown' };
     }
