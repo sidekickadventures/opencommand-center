@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenCommand Center</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>OpenCommand Center</h1>
+    <div id="status-bar">Connecting...</div>
+  </header>
+
+  <main id="grid">
+    <!-- Left Panel -->
+    <section id="left-panel" class="panel"></section>
+
+    <!-- Center Panel -->
+    <section id="center-panel" class="panel"></section>
+
+    <!-- Right Panel -->
+    <section id="right-panel" class="panel"></section>
+  </main>
+
+  <!-- Task Modal -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-content">
+      <h2 id="modal-title">Send Task</h2>
+      <form id="task-form">
+        <input type="hidden" id="agent-id">
+        <textarea id="task-payload" placeholder='Enter JSON payload, e.g. {"action":"...","params":{...}}' rows="6"></textarea>
+        <div class="modal-actions">
+          <button type="button" id="cancel-btn">Cancel</button>
+          <button type="submit">Send</button>
+        </div>
+      </form>
+      <pre id="result-output" class="hidden"></pre>
+    </div>
+  </div>
+
+  <script src="frontend.js"></script>
+</body>
+</html>
