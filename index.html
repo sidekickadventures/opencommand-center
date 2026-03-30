@@ -9,21 +9,83 @@
 <body>
 <div class="monitor-frame">
  <div class="screen">
- <div class="header">OPENCLAW • AGENT COMMAND CENTER</div>
+ <div class="header">
+   <span>OPENCLAW • AGENT COMMAND CENTER</span>
+   <div class="header-right">
+     <div class="status-bar">
+       <div id="status-dot" class="status-dot disconnected"></div>
+       <span id="status-text">Checking connection...</span>
+     </div>
+     <button id="help-toggle" onclick="toggleHelp()" title="Show command examples">?</button>
+   </div>
+ </div>
  
  <div class="container" id="agents"></div>
  
  <div class="log" id="log">
- <strong>● System Online</strong> — Connected to Xaeon Cloud.<br>
- Loading agent registry...
+ <strong>● System Online</strong> — Starting up...<br>
  </div>
 
  <div class="input-area">
-   <textarea id="payload-input" placeholder='Enter JSON payload for the selected agent, e.g. {"action":"ping"}&#10;If empty, a default {"action":"ping"} will be sent.'></textarea>
+   <div class="input-row">
+     <textarea id="payload-input" placeholder="Type a command in plain English...&#10;E.g. &quot;verify resources&quot; or &quot;compose a trap beat at 140 bpm&quot;"></textarea>
+     <button id="mode-toggle" onclick="toggleMode()" title="Toggle between Natural Language and JSON mode">{ }</button>
+   </div>
+   <div class="mode-hint" id="mode-hint">Natural Language mode — just type what you want</div>
+ </div>
+
+ <!-- Help Overlay -->
+ <div id="help-overlay" class="help-overlay hidden">
+   <div class="help-panel">
+     <div class="help-header">
+       <span>Command Reference</span>
+       <button onclick="toggleHelp()" title="Close">✕</button>
+     </div>
+     <div class="help-body">
+       <div class="help-col">
+         <h4>Natural Language (10 examples)</h4>
+         <ul>
+           <li><code>verify resources</code></li>
+           <li><code>compose a trap beat at 140 bpm</code></li>
+           <li><code>start session on Bitcoin</code></li>
+           <li><code>record audio</code></li>
+           <li><code>save to blockchain on Tezos</code></li>
+           <li><code>mint NFT on Fractal</code></li>
+           <li><code>check balance on Litecoin</code></li>
+           <li><code>scan transactions</code></li>
+           <li><code>approve payment</code></li>
+           <li><code>hello</code></li>
+         </ul>
+       </div>
+       <div class="help-divider"></div>
+       <div class="help-col">
+         <h4>JSON Mode (10 examples)</h4>
+         <ul>
+           <li><code>{"action":"verify_resources"}</code></li>
+           <li><code>{"action":"compose","genre":"trap","bpm":140}</code></li>
+           <li><code>{"action":"start_session","blockchain":"bitcoin"}</code></li>
+           <li><code>{"action":"record_audio","sessionId":"..."}</code></li>
+           <li><code>{"action":"save_to_blockchain","blockchain":"tezos"}</code></li>
+           <li><code>{"action":"mint_nft","chain":"fractal"}</code></li>
+           <li><code>{"action":"get_balance","chain":"litecoin","address":"..."}</code></li>
+           <li><code>{"action":"scan_transactions"}</code></li>
+           <li><code>{"action":"approve","data":{"item":"payment"}}</code></li>
+           <li><code>{"action":"ping"}</code></li>
+         </ul>
+       </div>
+     </div>
+     <div class="help-footer">
+       Click an agent card to activate it, then type your command
+     </div>
+   </div>
  </div>
  </div>
 </div>
 
 <script src="frontend.js"></script>
+<script>
+function toggleMode() { if (typeof window.toggleMode === 'function') window.toggleMode(); }
+function toggleHelp() { var h = document.getElementById('help-overlay'); if (h) h.classList.toggle('hidden'); }
+</script>
 </body>
 </html>

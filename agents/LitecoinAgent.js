@@ -1,28 +1,34 @@
-// LitecoinAgent - Litecoin Litescribe & Runes via NodesNow.io
+// LitecoinAgent - Litecoin Litescribe & Runes via NodesNow
+const AgentBase = require('../AgentBase');
 const { LitecoinService } = require('../BlockchainService');
 
-class LitecoinAgent {
-    constructor() {
-        this.name = 'LitecoinAgent';
+class LitecoinAgent extends AgentBase {
+  async process(payload) {
+    const { action, params } = payload;
+    const supported = ['inscribe_litescribe', 'get_balance'];
+    if (!supported.includes(action)) {
+      throw new Error(`Unsupported action: ${action}`);
     }
 
-    async inscribeLitescribe(data, recipientAddress) {
-        return await LitecoinService.inscribeLitescribe(data, recipientAddress);
+    switch (action) {
+      case 'inscribe_litescribe': {
+        const { data, recipientAddress } = params || {};
+        if (!data || !recipientAddress) {
+          throw new Error('inscribe_litescribe requires params.data and params.recipientAddress');
+        }
+        const result = await LitecoinService.inscribeLitescribe(data, recipientAddress);
+        return { success: true, txid: result.txid, service: result.service };
+      }
+      case 'get_balance': {
+        const { address } = params || {};
+        if (!address) throw new Error('get_balance requires params.address');
+        const balance = await LitecoinService.getBalance(address);
+        return { success: true, address, balance };
+      }
+      default:
+        return { success: false, error: 'unknown' };
     }
-
-    async getBalance(address) {
-        return await LitecoinService.getBalance(address);
-    }
-
-    async simulateLitescribeInscription(data) {
-        const testAddress = process.env.LITECOIN_TEST_ADDRESS || 'ltc1qtestaddress00000000000';
-        console.log(`[LitecoinAgent] simulateLitescribeInscription -> inscribeLitescribe to ${testAddress}`);
-        return await this.inscribeLitescribe(Buffer.from(data), testAddress);
-    }
-
-    async simulateRuneMint(data) {
-        throw new Error('Litecoin Rune minting not implemented yet');
-    }
+  }
 }
 
 module.exports = LitecoinAgent;

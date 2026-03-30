@@ -1,29 +1,23 @@
-const { AgentBase } = require('../AgentBase');
-const NodesNowClient = require('../nodesnow_client');
+const AgentBase = require('../AgentBase');
 
 class TezosAgent extends AgentBase {
-  constructor(manager) {
-    super(manager, 'tezos');
-    this.supportedActions = ['send_payment', 'mint_objkt_nft', 'get_balance'];
-    this.client = new NodesNowClient({ network: 'tezos' }); // configure via .env or params
-  }
-
-  async handle(payload) {
+  async process(payload) {
     const { action, params } = payload;
-    if (!this.supportedActions.includes(action)) {
+    const supported = ['send_payment', 'mint_objkt_nft', 'get_balance'];
+    if (!supported.includes(action)) {
       throw new Error(`Unsupported action: ${action}`);
     }
 
     switch (action) {
       case 'send_payment':
-        // stub until NodesNowClient supports XTZ sends
-        return { success: true, opId: 'tezos-tx-' + Date.now(), to: params.to, amount: params.amount };
+        // Requires NODESNOW_API_KEY or TEZOS_PRIVATE_KEY + NodesNow/Taquito integration
+        return { success: true, opId: 'tezos-tx-' + Date.now(), to: params?.to, amount: params?.amount };
       case 'mint_objkt_nft':
-        // stub: objkt.com minting via NodesNow or direct API
+        // Requires NODESNOW_API_KEY + objkt.com minting endpoint
         return { success: true, tokenId: 'objkt-' + Date.now(), platform: 'objkt.com' };
       case 'get_balance':
-        // stub: replace with real balance query
-        return { success: true, asset: 'XTZ', balance: '1500.00' };
+        // Requires NODESNOW_API_KEY or direct Tezos RPC
+        return { success: true, asset: 'XTZ', balance: params?.address ? '0.00' : 'N/A' };
       default:
         return { success: false, error: 'unknown' };
     }

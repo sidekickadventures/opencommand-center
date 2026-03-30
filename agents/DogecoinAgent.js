@@ -1,24 +1,34 @@
-// DogecoinAgent - Dogecoin Doginals via NodesNow.io
+// DogecoinAgent - Dogecoin Doginals via NodesNow
+const AgentBase = require('../AgentBase');
 const { DogecoinService } = require('../BlockchainService');
 
-class DogecoinAgent {
-    constructor() {
-        this.name = 'DogecoinAgent';
+class DogecoinAgent extends AgentBase {
+  async process(payload) {
+    const { action, params } = payload;
+    const supported = ['inscribe_doginal', 'get_balance'];
+    if (!supported.includes(action)) {
+      throw new Error(`Unsupported action: ${action}`);
     }
 
-    async inscribeDoginal(data, recipientAddress) {
-        return await DogecoinService.inscribeDoginal(data, recipientAddress);
+    switch (action) {
+      case 'inscribe_doginal': {
+        const { data, recipientAddress } = params || {};
+        if (!data || !recipientAddress) {
+          throw new Error('inscribe_doginal requires params.data and params.recipientAddress');
+        }
+        const result = await DogecoinService.inscribeDoginal(data, recipientAddress);
+        return { success: true, txid: result.txid, service: result.service };
+      }
+      case 'get_balance': {
+        const { address } = params || {};
+        if (!address) throw new Error('get_balance requires params.address');
+        const balance = await DogecoinService.getBalance(address);
+        return { success: true, address, balance };
+      }
+      default:
+        return { success: false, error: 'unknown' };
     }
-
-    async getBalance(address) {
-        return await DogecoinService.getBalance(address);
-    }
-
-    async simulateDoginalInscription(data) {
-        const testAddress = process.env.DOGECOIN_TEST_ADDRESS || 'D9testaddress000000000000';
-        console.log(`[DogecoinAgent] simulateDoginalInscription -> inscribeDoginal to ${testAddress}`);
-        return await this.inscribeDoginal(Buffer.from(data), testAddress);
-    }
+  }
 }
 
 module.exports = DogecoinAgent;
