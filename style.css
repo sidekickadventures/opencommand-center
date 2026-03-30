@@ -133,15 +133,22 @@
    flex-shrink: 0;
  }
 
+ /* Input row: textarea + toggle button side by side */
+ .input-row {
+   display: flex;
+   gap: 8px;
+   align-items: stretch;
+ }
+
  #payload-input {
-   width: 100%;
+   flex: 1;
    height: 80px;
    background: rgba(10, 10, 10, 0.9);
    border: 1px solid #0088cc;
    border-radius: 8px;
    padding: 10px;
    color: #ccffee;
-   font-family: 'Consolas', monospace;
+   font-family: 'Consolas', 'Courier New', monospace;
    font-size: 13px;
    resize: none;
    outline: none;
@@ -153,6 +160,49 @@
    border-color: #00ffcc;
    box-shadow: 0 0 8px rgba(0, 255, 204, 0.3);
  }
+
+ /* Mode toggle button */
+ #mode-toggle {
+   width: 52px;
+   min-width: 52px;
+   height: 80px;
+   background: linear-gradient(#00aaff, #0066cc);
+   border: 1px solid #00ccff;
+   border-radius: 8px;
+   color: #ffffff;
+   font-weight: 700;
+   font-size: 13px;
+   font-family: 'Consolas', monospace;
+   cursor: pointer;
+   transition: all 0.2s;
+   white-space: nowrap;
+   flex-shrink: 0;
+ }
+
+ #mode-toggle:hover {
+   background: linear-gradient(#00ccff, #0088ff);
+   box-shadow: 0 0 12px rgba(0, 200, 255, 0.5);
+   transform: scale(1.03);
+ }
+
+ #mode-toggle:active {
+   transform: scale(0.98);
+ }
+
+ /* Mode hint bar */
+ .mode-hint {
+   font-size: 11px;
+   color: #668899;
+   margin-top: 5px;
+   text-align: center;
+   letter-spacing: 0.5px;
+   flex-shrink: 0;
+ }
+
+ /* Log entry color coding */
+ .log-entry.success { color: #4caf50; }
+ .log-entry.error   { color: #ff6666; }
+ .log-entry.warn    { color: #ffaa00; }
 
  /* Scrollbar styling (WebKit) */
  ::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -188,6 +238,12 @@
    }
    #payload-input {
      height: 70px;
+     font-size: 12px;
+   }
+   #mode-toggle {
+     height: 70px;
+     width: 46px;
+     min-width: 46px;
      font-size: 12px;
    }
  }

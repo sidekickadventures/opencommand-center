@@ -15,15 +15,22 @@
  
  <div class="log" id="log">
  <strong>● System Online</strong> — Connected to Xaeon Cloud.<br>
- Select an agent below to activate.
+ Select an agent, then type a command below.
  </div>
 
  <div class="input-area">
-   <textarea id="payload-input" placeholder='Enter JSON payload for the selected agent, e.g. {"action":"ping"}&#10;If empty, a default {"action":"ping"} will be sent.'></textarea>
+   <div class="input-row">
+     <textarea id="payload-input" placeholder="Type a command in plain English...&#10;E.g. &quot;verify resources&quot; or &quot;compose a trap beat at 140 bpm&quot;"></textarea>
+     <button id="mode-toggle" onclick="toggleMode()" title="Toggle between Natural Language and JSON mode">{ }</button>
+   </div>
+   <div class="mode-hint" id="mode-hint">Natural Language mode — just type what you want</div>
  </div>
  </div>
 </div>
 
 <script src="frontend.js"></script>
+<script>
+function toggleMode() { if (typeof window.toggleMode === 'function') window.toggleMode(); }
+</script>
 </body>
 </html>
