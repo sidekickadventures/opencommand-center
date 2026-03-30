@@ -8,6 +8,7 @@ let agents = [];
 let isIframe = false;
 let isJsonMode = false;
 let serverConnected = false;
+let lastSelectedAgent = null;
 
 function el(selector) { return document.querySelector(selector); }
 
@@ -42,7 +43,7 @@ function sendToParent(message) {
 
 // ── Natural Language Parser ─────────────────────────────────────────────────
 
-function parseNaturalLanguage(text, agentId, agentName) {
+function parseNaturalLanguage(text) {
   const t = text.toLowerCase().trim();
 
   if (t === 'ping' || t === 'hello' || t === 'hi') return { action: 'ping' };
@@ -98,7 +99,7 @@ function extractBpm(text) {
   return m ? parseInt(m[1]) : 120;
 }
 
-// ── Connection Check ───────────────────────────────────────────────────────
+// ── Connection Check ─────────────────────────────────────────────────────
 
 async function checkConnection() {
   try {
@@ -129,6 +130,7 @@ function renderAgents() {
   agents.forEach(agent => {
     const card = document.createElement('div');
     card.className = 'card';
+    card.dataset.agentId = agent.id;
     card.innerHTML = `
       <div class="icon">${agent.icon || '🤖'}</div>
       <h3>${agent.name}</h3>
@@ -136,18 +138,36 @@ function renderAgents() {
     `;
     card.addEventListener('click', (e) => {
       e.preventDefault();
-      activateAgent(agent);
+      selectAgent(agent, card);
     });
     card.setAttribute('tabindex', '0');
     card.setAttribute('role', 'button');
     card.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        activateAgent(agent);
+        selectAgent(agent, card);
       }
     });
     container.appendChild(card);
   });
+}
+
+function selectAgent(agent, card) {
+  // Deselect previous
+  document.querySelectorAll('.card.selected').forEach(c => c.classList.remove('selected'));
+  // Select new
+  if (card) {
+    card.classList.add('selected');
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+  lastSelectedAgent = agent;
+  // Auto-trigger if there's text
+  const input = el('#payload-input');
+  if (input && input.value.trim()) {
+    activateAgent(agent);
+  } else {
+    log(`Selected: <span style="color:#00ffcc">${agent.name}</span> — type a command and press Enter`, 'info');
+  }
 }
 
 async function loadRegistry() {
@@ -155,10 +175,9 @@ async function loadRegistry() {
     const r = await fetch(AGENT_REGISTRY_URL);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const data = await r.json();
-    // Registry can be a raw array OR an object with an "agents" key
     agents = Array.isArray(data) ? data : (data.agents || []);
     renderAgents();
-    log(`Connected — ${agents.length} agents loaded.`, 'success');
+    log(`Connected — ${agents.length} agents loaded. Select an agent and type a command.`, 'success');
   } catch (e) {
     log(`Error: ${e.message}. Is the server running?`, 'error');
     setStatus('disconnected', 'Server offline — run: node server.js');
@@ -178,7 +197,7 @@ function toggleMode() {
     toggleBtn.title = 'Switch to Natural Language mode';
     el('.mode-hint').textContent = 'JSON mode — enter raw JSON';
   } else {
-    input.placeholder = 'Type a command in plain English...\nE.g. "verify resources" or "compose a trap beat at 140 bpm"';
+    input.placeholder = 'Type a command in plain English...&#10;E.g. "verify resources" or "compose a trap beat at 140 bpm"';
     input.value = '';
     toggleBtn.textContent = '{ }';
     toggleBtn.title = 'Switch to JSON mode';
@@ -201,7 +220,7 @@ async function activateAgent(agent, overridePayload) {
   if (overridePayload) {
     payload = overridePayload;
   } else if (!inputText) {
-    log('Enter a command first.', 'error');
+    log('Select an agent, type a command, and press Enter.', 'error');
     return;
   } else if (isJsonMode) {
     try { payload = JSON.parse(inputText); }
@@ -210,7 +229,7 @@ async function activateAgent(agent, overridePayload) {
       return;
     }
   } else {
-    payload = parseNaturalLanguage(inputText, agent.id, agent.name);
+    payload = parseNaturalLanguage(inputText);
     log(`Parsed: <span style="color:#ffaa00">${JSON.stringify(payload)}</span>`, 'info');
   }
 
@@ -245,23 +264,29 @@ async function activateAgent(agent, overridePayload) {
   }
 }
 
+// ── Enter Key on Textarea ──────────────────────────────────────────────────
+el('#payload-input')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    if (!lastSelectedAgent) {
+      log('Select an agent card first, then type a command.', 'error');
+      return;
+    }
+    activateAgent(lastSelectedAgent);
+  }
+});
+
 // ── postMessage API ──────────────────────────────────────────────────────────
-// Only respond to messages that have our expected structure
 const KNOWN_MESSAGE_TYPES = new Set([
   'activate', 'ping', 'get_agents', 'set_payload', 'EXTENSION_VERSION'
 ]);
 
 window.addEventListener('message', async (event) => {
-  // Ignore messages that don't look like ours
   const data = event.data || {};
   const type = data.type;
 
-  // Silently ignore known browser/extension messages
-  if (!type || type.startsWith('channel-secure') || type === 'EXTENSION_VERSION') {
-    return;
-  }
+  if (!type || type.startsWith('channel-secure') || type === 'EXTENSION_VERSION') return;
 
-  // Only log truly unknown types (not our API)
   if (!KNOWN_MESSAGE_TYPES.has(type)) {
     log(`Unknown postMessage type: ${type}`, 'error');
     return;
