@@ -1,18 +1,16 @@
 // server.js — Express-based static file server + /agent/run dispatch
-// Wires directly to AgentManager which registers all agent classes at startup
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const { loadRegistry, listAgents, handle } = require('./AgentManager');
+const { getReconnectNotifier } = require('./reconnect_notifier');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
 app.use(express.json());
 app.use(express.static(__dirname));
 
-// ── Agent dispatch ─────────────────────────────────────────────────────────
 app.post('/agent/run', async (req, res) => {
   const { agent, skill, ...rest } = req.body;
   if (!agent) {
@@ -27,28 +25,41 @@ app.post('/agent/run', async (req, res) => {
   }
 });
 
-// ── Health / status ─────────────────────────────────────────────────────────
 app.get('/health', (req, res) => {
   const agentList = listAgents().map(a => ({
-    id: a.id,
-    name: a.name,
-    role: a.role,
-    state: a.state || 'idle'
+    id: a.id, name: a.name, role: a.role, state: a.state || 'idle'
   }));
   res.json({ status: 'ok', agents: agentList });
 });
 
-// ── iframe postMessage relay (optional CORS helper) ─────────────────────────
+app.get('/startup-status', (req, res) => {
+  const notifier = getReconnectNotifier('7650513353');
+  const { statusMessage, missedTasks } = notifier.notifyAndPrompt();
+  res.json({
+    statusMessage,
+    missedTaskCount: missedTasks.length,
+    joke: notifier.getRandomJoke()
+  });
+});
+
 app.get('/postmessage-helper', (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.json({ hint: 'Use window.parent.postMessage from inside the iframe' });
 });
 
-// Bootstrap: load registry then start server
 loadRegistry()
   .then(() => {
     app.listen(PORT, () => {
-      console.log(`OpenCommand Center listening on http://localhost:${PORT}`);
+      const notifier = getReconnectNotifier('7650513353');
+      const { statusMessage, missedTasks } = notifier.notifyAndPrompt();
+      console.log('\n══════════════════════════════════════');
+      console.log('  🔔 RECONNECT NOTIFICATION');
+      console.log('══════════════════════════════════════');
+      console.log(statusMessage.replace(/[*_]/g, ''));
+      if (missedTasks.length > 0) {
+        console.log(`\n  ${notifier.getRandomJoke()}`);
+      }
+      console.log(`\nOpenCommand Center listening on http://localhost:${PORT}`);
     });
   })
   .catch(err => {
