@@ -121,7 +121,7 @@ function renderAgents() {
   if (!container) return;
   container.innerHTML = '';
 
-  if (agents.length === 0) {
+  if (!Array.isArray(agents) || agents.length === 0) {
     container.innerHTML = '<div class="no-agents">No agents loaded. Check server connection.</div>';
     return;
   }
@@ -154,7 +154,9 @@ async function loadRegistry() {
   try {
     const r = await fetch(AGENT_REGISTRY_URL);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    agents = await r.json();
+    const data = await r.json();
+    // Registry can be a raw array OR an object with an "agents" key
+    agents = Array.isArray(data) ? data : (data.agents || []);
     renderAgents();
     log(`Connected — ${agents.length} agents loaded.`, 'success');
   } catch (e) {
@@ -244,9 +246,28 @@ async function activateAgent(agent, overridePayload) {
 }
 
 // ── postMessage API ──────────────────────────────────────────────────────────
+// Only respond to messages that have our expected structure
+const KNOWN_MESSAGE_TYPES = new Set([
+  'activate', 'ping', 'get_agents', 'set_payload', 'EXTENSION_VERSION'
+]);
+
 window.addEventListener('message', async (event) => {
-  const { type, agent, payload } = event.data || {};
-  if (!type) return;
+  // Ignore messages that don't look like ours
+  const data = event.data || {};
+  const type = data.type;
+
+  // Silently ignore known browser/extension messages
+  if (!type || type.startsWith('channel-secure') || type === 'EXTENSION_VERSION') {
+    return;
+  }
+
+  // Only log truly unknown types (not our API)
+  if (!KNOWN_MESSAGE_TYPES.has(type)) {
+    log(`Unknown postMessage type: ${type}`, 'error');
+    return;
+  }
+
+  const { agent, payload } = data;
 
   switch (type) {
     case 'activate': {
@@ -266,8 +287,6 @@ window.addEventListener('message', async (event) => {
         el('#payload-input').value = typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2);
       }
       break;
-    default:
-      log(`Unknown postMessage type: ${type}`, 'error');
   }
 });
 
