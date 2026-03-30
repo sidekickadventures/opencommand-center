@@ -11,14 +11,19 @@
  <div class="screen">
  <div class="header">
    <span>OPENCLAW • AGENT COMMAND CENTER</span>
-   <button id="help-toggle" onclick="toggleHelp()" title="Show command examples">?</button>
+   <div class="header-right">
+     <div class="status-bar">
+       <div id="status-dot" class="status-dot disconnected"></div>
+       <span id="status-text">Checking connection...</span>
+     </div>
+     <button id="help-toggle" onclick="toggleHelp()" title="Show command examples">?</button>
+   </div>
  </div>
  
  <div class="container" id="agents"></div>
  
  <div class="log" id="log">
- <strong>● System Online</strong> — Connected to Xaeon Cloud.<br>
- Select an agent, then type a command below.
+ <strong>● System Online</strong> — Starting up...<br>
  </div>
 
  <div class="input-area">
@@ -74,7 +79,6 @@
      </div>
    </div>
  </div>
-
  </div>
 </div>
 
